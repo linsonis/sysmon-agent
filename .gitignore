@@ -2,3 +2,9 @@
 .env
 httplib.h
 GTest.h
+
+#remove build artifacts
+build/
+bin/
+*.o
+*.so
