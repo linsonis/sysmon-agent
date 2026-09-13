@@ -1,0 +1,13 @@
+[Unit]
+Description=Sysmon Linux System Monitor Agent
+After=network.target docker.service
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/sysmon --service
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

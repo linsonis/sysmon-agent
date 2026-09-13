@@ -1,0 +1,4 @@
+http_port: 9100
+collection_interval_ms: 1000
+enable_docker: true
+log_level: info
