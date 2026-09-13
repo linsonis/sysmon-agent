@@ -1,0 +1,4 @@
+.vscode/
+.env
+httplib.h
+GTest.h
