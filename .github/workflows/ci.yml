@@ -10,19 +10,19 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-#     steps:
-#     - uses: actions/checkout@v4
+    steps:
+    - uses: actions/checkout@v4
 
-#     - name: Install Dependencies
-#       run: |
-#         sudo apt-get update
-#         sudo apt-get install -y cmake g++ make libncurses-dev libncursesw5-dev
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake g++ make libncurses-dev libncursesw5-dev
 
-#     - name: Configure CMake
-#       run: cmake -B build -DSYSMON_BUILD_TESTS=ON
+    - name: Configure CMake
+      run: cmake -B build -DSYSMON_BUILD_TESTS=ON
 
-#     - name: Build
-#       run: cmake --build build -j$(nproc)
+    - name: Build
+      run: cmake --build build -j$(nproc)
 
-#     - name: Run Tests
-#       run: ctest --test-dir build --output-on-failure
+    - name: Run Tests
+      run: ctest --test-dir build --output-on-failure
