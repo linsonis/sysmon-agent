@@ -68,7 +68,7 @@ void run_tui() {
 
         clear();
         mvprintw(0, 2, "==================================================");
-        mvprintw(1, 2, "   SYSMON - LINUX SYSTEM MONITOR (Press 'q' to quit)");
+        mvprintw(1, 2, "    System Monitor         (Press 'q' to quit)");
         mvprintw(2, 2, "==================================================");
 
         mvprintw(4, 2, "CPU Usage        : [%-20s] %.1f%%",
