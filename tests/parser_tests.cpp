@@ -1,4 +1,4 @@
-#include <gtest/GTest.h>
+#include <gtest/gtest.h>
 #include "common/config.hpp"
 #include <fstream>
 

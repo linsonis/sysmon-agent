@@ -1,4 +1,4 @@
-#include <gtest/GTest.h>
+#include <gtest/gtest.h>
 #include "metrics/registry.hpp"
 #include "metrics/prometheus.hpp"
 

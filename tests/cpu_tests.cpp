@@ -1,4 +1,4 @@
-#include <gtest/GTest.h>
+#include <gtest/gtest.h>
 #include "collectors/cpu.hpp"
 #include "metrics/registry.hpp"
 
