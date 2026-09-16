@@ -65,6 +65,7 @@ if(SYSMON_BUILD_TESTS)
         tests/metric_tests.cpp
         src/metrics/metric.cpp
         src/metrics/registry.cpp
+        src/metrics/prometheus.cpp
         src/common/config.cpp
         src/common/logging.cpp
         src/collectors/cpu.cpp
