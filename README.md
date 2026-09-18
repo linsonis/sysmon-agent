@@ -1,5 +1,5 @@
 # sysmon-agent
-Custom deployable Linux system monitor
+Custom deployable Linux system monitor with Prometheus exposal
 
 ## Getting Started
 
