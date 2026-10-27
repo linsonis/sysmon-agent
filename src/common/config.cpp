@@ -15,7 +15,7 @@ static inline std::string trim(const std::string& s) {
 bool Config::load_from_file(const std::string& path) {
     std::ifstream file(path);
     if (!file.is_open()) {
-        std::cerr << "Could not open config file: " << path << ", using defaults.\n";
+        std::cerr << "Could not open config file: " << path << "\n";
         return false;
     }
 

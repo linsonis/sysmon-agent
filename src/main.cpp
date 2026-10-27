@@ -18,6 +18,8 @@
 #include <thread>
 #include <iomanip>
 #include <sstream>
+#include <fstream>
+#include <vector>
 
 #ifdef __has_include
 #if __has_include(<ncurses.h>)
@@ -47,8 +49,9 @@ void run_tui() {
 
     bool running = true;
     while (running) {
-        run_collectors();
-
+        // The scheduler thread owns collection; the TUI only redraws from the
+        // registry. (A keypress makes getch() return early, so collecting here
+        // would sample as fast as keys repeat.)
         auto metrics = sysmon::MetricRegistry::instance().get_metrics();
         double cpu_usage = 0.0;
         double mem_used = 0.0;
@@ -56,6 +59,7 @@ void run_tui() {
         double process_count = 0.0;
         double failed_units = 0.0;
         double containers_running = 0.0;
+        bool docker_up = false;
 
         for (const auto& m : metrics) {
             if (m.name == "sysmon_cpu_usage_ratio") cpu_usage = m.value * 100.0;
@@ -64,6 +68,7 @@ void run_tui() {
             else if (m.name == "sysmon_process_count") process_count = m.value;
             else if (m.name == "sysmon_systemd_failed_units") failed_units = m.value;
             else if (m.name == "sysmon_docker_containers_running") containers_running = m.value;
+            else if (m.name == "sysmon_docker_up") docker_up = m.value > 0.5;
         }
 
         clear();
@@ -77,7 +82,11 @@ void run_tui() {
                  mem_used, mem_total, (mem_total > 0 ? (mem_used / mem_total) * 100.0 : 0.0));
         mvprintw(6, 2, "Active Processes : %.0f", process_count);
         mvprintw(7, 2, "Systemd Failed   : %.0f units", failed_units);
-        mvprintw(8, 2, "Docker Containers: %.0f running", containers_running);
+        if (docker_up) {
+            mvprintw(8, 2, "Docker Containers: %.0f running", containers_running);
+        } else {
+            mvprintw(8, 2, "Docker Containers: unavailable (cannot reach docker.sock)");
+        }
 
         mvprintw(11, 2, "Prometheus HTTP Exporter: http://0.0.0.0:9100/metrics");
         refresh();
@@ -92,23 +101,55 @@ void run_tui() {
 #else
     std::cout << "NCurses not available. Running headless collection loop...\n";
     while (true) {
-        run_collectors();
         std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 #endif
 }
 
 int main(int argc, char* argv[]) {
-    sysmon::Config config;
-    config.load_from_file("deploy/config.yaml");
-
     bool service_mode = false;
+    std::string config_path;
     for (int i = 1; i < argc; ++i) {
-        if (std::string(argv[i]) == "--service") {
+        std::string arg = argv[i];
+        if (arg == "--service") {
             service_mode = true;
+        } else if (arg == "--config") {
+            if (i + 1 >= argc) {
+                std::cerr << "--config requires a path\n";
+                return 1;
+            }
+            config_path = argv[++i];
         }
     }
 
+    sysmon::Config config;
+    if (!config_path.empty()) {
+        // An explicitly requested config that cannot be read is an error, not a silent fallback.
+        if (!config.load_from_file(config_path)) {
+            return 1;
+        }
+    } else {
+        // Installed location first, then the in-repo copy for running from a checkout.
+        const std::vector<std::string> candidates = {"/etc/sysmon/config.yaml", "deploy/config.yaml"};
+        for (const auto& candidate : candidates) {
+            if (std::ifstream(candidate).good()) {
+                config_path = candidate;
+                config.load_from_file(candidate);
+                break;
+            }
+        }
+    }
+
+    // The TUI owns the terminal; log output would corrupt the display.
+    if (!service_mode) {
+        sysmon::Logger::instance().set_level(sysmon::LogLevel::ERROR);
+    }
+
+    if (config_path.empty()) {
+        sysmon::Logger::instance().warn("No config file found, using defaults");
+    } else {
+        sysmon::Logger::instance().info("Loaded config from " + config_path);
+    }
     sysmon::Logger::instance().info("Starting sysmon agent...");
 
     // Start metrics collection scheduler
@@ -117,7 +158,11 @@ int main(int argc, char* argv[]) {
 
     // Start HTTP server for Prometheus
     sysmon::HttpServer server;
-    server.start(config.http_port);
+    if (!server.start(config.http_port)) {
+        sysmon::Logger::instance().error("Could not start HTTP server on port " + std::to_string(config.http_port));
+        scheduler.stop();
+        return 1;
+    }
 
     if (service_mode) {
         std::cout << "Sysmon running as service on port " << config.http_port << "...\n";

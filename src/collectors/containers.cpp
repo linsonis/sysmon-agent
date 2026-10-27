@@ -1,5 +1,6 @@
 #include "containers.hpp"
 #include "../metrics/registry.hpp"
+#include "../common/logging.hpp"
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -9,13 +10,17 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
+#include <atomic>
+#include <cerrno>
 
 namespace sysmon {
 
-static std::string query_docker_socket(const std::string& path) {
+// Returns false and fills `error` if the Docker socket cannot be queried.
+static bool query_docker_socket(const std::string& path, std::string& body, std::string& error) {
     int sock = socket(AF_UNIX, SOCK_STREAM, 0);
     if (sock < 0) {
-        return "";
+        error = std::string("socket(): ") + std::strerror(errno);
+        return false;
     }
 
     struct sockaddr_un addr;
@@ -24,8 +29,9 @@ static std::string query_docker_socket(const std::string& path) {
     std::strncpy(addr.sun_path, "/var/run/docker.sock", sizeof(addr.sun_path) - 1);
 
     if (connect(sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+        error = std::string("cannot connect to /var/run/docker.sock: ") + std::strerror(errno);
         close(sock);
-        return "";
+        return false;
     }
 
     std::string request = "GET " + path + " HTTP/1.1\r\nHost: localhost\r\nAccept: */*\r\nConnection: close\r\n\r\n";
@@ -43,16 +49,33 @@ static std::string query_docker_socket(const std::string& path) {
 
     // Find double newline separating headers and body
     std::size_t body_pos = response.find("\r\n\r\n");
-    if (body_pos != std::string::npos) {
-        return response.substr(body_pos + 4);
+    if (body_pos == std::string::npos) {
+        error = "malformed response from Docker daemon";
+        return false;
     }
-    return "";
+    body = response.substr(body_pos + 4);
+    return true;
 }
 
 void ContainerCollector::collect() {
-    std::string json_response = query_docker_socket("/containers/json?all=true");
-    if (json_response.empty()) {
-        // Docker daemon not running or socket inaccessible
+    // -1 = not yet checked, 0 = unavailable, 1 = available. Atomic because the
+    // scheduler thread and the TUI loop both call collect().
+    static std::atomic<int> last_state{-1};
+
+    std::string json_response;
+    std::string error;
+    bool ok = query_docker_socket("/containers/json?all=true", json_response, error);
+
+    int state = ok ? 1 : 0;
+    if (last_state.exchange(state) != state) {
+        if (ok) {
+            Logger::instance().info("Docker daemon is reachable, collecting container metrics");
+        } else {
+            Logger::instance().warn("Docker metrics unavailable: " + error);
+        }
+    }
+    MetricRegistry::instance().update_metric("sysmon_docker_up", ok ? 1.0 : 0.0);
+    if (!ok) {
         return;
     }
 

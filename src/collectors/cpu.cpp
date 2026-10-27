@@ -5,6 +5,8 @@
 #include <vector>
 #include <unordered_map>
 #include <string>
+#include <chrono>
+#include <mutex>
 
 namespace sysmon {
 
@@ -29,8 +31,23 @@ struct CpuState {
 
 // Map to store previous states: key is "cpu" (aggregate) or "cpu0", "cpu1", etc.
 static std::unordered_map<std::string, CpuState> prev_cpu_states;
+static std::chrono::steady_clock::time_point prev_sample_time;
+static std::mutex cpu_mutex;
+
+// /proc/stat counts in 10ms ticks, so usage over a very short window is
+// quantized to 0%/50%/100% on a handful of ticks. Samples closer together than
+// this are ignored and the previous reading is kept.
+static constexpr std::chrono::milliseconds kMinSampleWindow{200};
 
 void CpuCollector::collect() {
+    // collect() can be called from several threads (scheduler and callers).
+    std::lock_guard<std::mutex> lock(cpu_mutex);
+
+    auto now = std::chrono::steady_clock::now();
+    if (!prev_cpu_states.empty() && now - prev_sample_time < kMinSampleWindow) {
+        return;
+    }
+
     std::ifstream file("/proc/stat");
     if (!file.is_open()) {
         return;
@@ -57,12 +74,13 @@ void CpuCollector::collect() {
                 double total_diff = current.get_total() - prev.get_total();
                 double idle_diff = current.get_idle() - prev.get_idle();
 
-                double usage = 0.0;
-                if (total_diff > 0.0) {
-                    usage = 1.0 - (idle_diff / total_diff);
-                    if (usage < 0.0) usage = 0.0;
-                    if (usage > 1.0) usage = 1.0;
+                if (total_diff <= 0.0) {
+                    // No ticks elapsed: keep the previous reading rather than reporting 0%.
+                    continue;
                 }
+                double usage = 1.0 - (idle_diff / total_diff);
+                if (usage < 0.0) usage = 0.0;
+                if (usage > 1.0) usage = 1.0;
 
                 if (cpu_name == "cpu") {
                     MetricRegistry::instance().update_metric("sysmon_cpu_usage_ratio", usage);
@@ -80,6 +98,7 @@ void CpuCollector::collect() {
             prev_cpu_states[cpu_name] = current;
         }
     }
+    prev_sample_time = now;
 }
 
 } // namespace sysmon

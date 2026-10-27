@@ -63,6 +63,7 @@ if(SYSMON_BUILD_TESTS)
         tests/memory_tests.cpp
         tests/parser_tests.cpp
         tests/metric_tests.cpp
+        tests/server_tests.cpp
         src/metrics/metric.cpp
         src/metrics/registry.cpp
         src/metrics/prometheus.cpp
@@ -70,9 +71,10 @@ if(SYSMON_BUILD_TESTS)
         src/common/logging.cpp
         src/collectors/cpu.cpp
         src/collectors/memory.cpp
+        src/http/server.cpp
     )
 
-    target_link_libraries(sysmon_tests PRIVATE GTest::gtest_main pthread)
+    target_link_libraries(sysmon_tests PRIVATE GTest::gtest_main httplib::httplib pthread)
     target_include_directories(sysmon_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
     include(GoogleTest)
