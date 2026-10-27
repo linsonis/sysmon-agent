@@ -64,6 +64,7 @@ if(SYSMON_BUILD_TESTS)
         tests/parser_tests.cpp
         tests/metric_tests.cpp
         tests/server_tests.cpp
+        tests/counter_tests.cpp
         src/metrics/metric.cpp
         src/metrics/registry.cpp
         src/metrics/prometheus.cpp
@@ -71,6 +72,8 @@ if(SYSMON_BUILD_TESTS)
         src/common/logging.cpp
         src/collectors/cpu.cpp
         src/collectors/memory.cpp
+        src/collectors/network.cpp
+        src/collectors/disk.cpp
         src/http/server.cpp
     )
 

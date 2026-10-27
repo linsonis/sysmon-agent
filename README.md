@@ -45,4 +45,5 @@ docker run -d \
   sysmon-agent
 ```
 
-
+### Grafana Dashboard
+`dashboards/system.json` is a ready-made Grafana dashboard ("Sysmon System Overview"). It expects a Prometheus data source with the UID `prometheus` that scrapes the agent on port 9100. Import it from the Grafana UI (Dashboards -> New -> Import), or drop it in a provisioned dashboards directory.

@@ -46,15 +46,15 @@ void NetworkCollector::collect() {
         if (ss >> rx_bytes >> rx_packets >> rx_errs >> rx_drop >> dummy >> dummy >> dummy >> dummy) {
             // Parse transmit columns: bytes, packets, errs, drop, fifo, colls, carrier, compressed
             if (ss >> tx_bytes >> tx_packets >> tx_errs >> tx_drop) {
-                MetricRegistry::instance().update_metric("sysmon_network_receive_bytes_total", static_cast<double>(rx_bytes), {{"interface", interface}});
-                MetricRegistry::instance().update_metric("sysmon_network_receive_packets_total", static_cast<double>(rx_packets), {{"interface", interface}});
-                MetricRegistry::instance().update_metric("sysmon_network_receive_errors_total", static_cast<double>(rx_errs), {{"interface", interface}});
-                MetricRegistry::instance().update_metric("sysmon_network_receive_drop_total", static_cast<double>(rx_drop), {{"interface", interface}});
+                MetricRegistry::instance().update_metric("sysmon_network_receive_bytes_total", static_cast<double>(rx_bytes), {{"interface", interface}}, MetricType::COUNTER);
+                MetricRegistry::instance().update_metric("sysmon_network_receive_packets_total", static_cast<double>(rx_packets), {{"interface", interface}}, MetricType::COUNTER);
+                MetricRegistry::instance().update_metric("sysmon_network_receive_errors_total", static_cast<double>(rx_errs), {{"interface", interface}}, MetricType::COUNTER);
+                MetricRegistry::instance().update_metric("sysmon_network_receive_drop_total", static_cast<double>(rx_drop), {{"interface", interface}}, MetricType::COUNTER);
 
-                MetricRegistry::instance().update_metric("sysmon_network_transmit_bytes_total", static_cast<double>(tx_bytes), {{"interface", interface}});
-                MetricRegistry::instance().update_metric("sysmon_network_transmit_packets_total", static_cast<double>(tx_packets), {{"interface", interface}});
-                MetricRegistry::instance().update_metric("sysmon_network_transmit_errors_total", static_cast<double>(tx_errs), {{"interface", interface}});
-                MetricRegistry::instance().update_metric("sysmon_network_transmit_drop_total", static_cast<double>(tx_drop), {{"interface", interface}});
+                MetricRegistry::instance().update_metric("sysmon_network_transmit_bytes_total", static_cast<double>(tx_bytes), {{"interface", interface}}, MetricType::COUNTER);
+                MetricRegistry::instance().update_metric("sysmon_network_transmit_packets_total", static_cast<double>(tx_packets), {{"interface", interface}}, MetricType::COUNTER);
+                MetricRegistry::instance().update_metric("sysmon_network_transmit_errors_total", static_cast<double>(tx_errs), {{"interface", interface}}, MetricType::COUNTER);
+                MetricRegistry::instance().update_metric("sysmon_network_transmit_drop_total", static_cast<double>(tx_drop), {{"interface", interface}}, MetricType::COUNTER);
             }
         }
     }

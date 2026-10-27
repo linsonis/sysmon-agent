@@ -45,15 +45,15 @@ void DiskCollector::collect() {
             double read_bytes = static_cast<double>(sectors_read) * 512.0;
             double write_bytes = static_cast<double>(sectors_written) * 512.0;
 
-            MetricRegistry::instance().update_metric("sysmon_disk_reads_completed_total", static_cast<double>(reads_completed), {{"device", device}});
-            MetricRegistry::instance().update_metric("sysmon_disk_read_bytes_total", read_bytes, {{"device", device}});
-            MetricRegistry::instance().update_metric("sysmon_disk_read_time_ms_total", static_cast<double>(read_time_ms), {{"device", device}});
+            MetricRegistry::instance().update_metric("sysmon_disk_reads_completed_total", static_cast<double>(reads_completed), {{"device", device}}, MetricType::COUNTER);
+            MetricRegistry::instance().update_metric("sysmon_disk_read_bytes_total", read_bytes, {{"device", device}}, MetricType::COUNTER);
+            MetricRegistry::instance().update_metric("sysmon_disk_read_time_ms_total", static_cast<double>(read_time_ms), {{"device", device}}, MetricType::COUNTER);
 
-            MetricRegistry::instance().update_metric("sysmon_disk_writes_completed_total", static_cast<double>(writes_completed), {{"device", device}});
-            MetricRegistry::instance().update_metric("sysmon_disk_write_bytes_total", write_bytes, {{"device", device}});
-            MetricRegistry::instance().update_metric("sysmon_disk_write_time_ms_total", static_cast<double>(write_time_ms), {{"device", device}});
+            MetricRegistry::instance().update_metric("sysmon_disk_writes_completed_total", static_cast<double>(writes_completed), {{"device", device}}, MetricType::COUNTER);
+            MetricRegistry::instance().update_metric("sysmon_disk_write_bytes_total", write_bytes, {{"device", device}}, MetricType::COUNTER);
+            MetricRegistry::instance().update_metric("sysmon_disk_write_time_ms_total", static_cast<double>(write_time_ms), {{"device", device}}, MetricType::COUNTER);
 
-            MetricRegistry::instance().update_metric("sysmon_disk_io_time_ms_total", static_cast<double>(io_time_ms), {{"device", device}});
+            MetricRegistry::instance().update_metric("sysmon_disk_io_time_ms_total", static_cast<double>(io_time_ms), {{"device", device}}, MetricType::COUNTER);
         }
     }
 }
